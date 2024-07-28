@@ -11,7 +11,7 @@ ENV GOPATH=$HOME/go
 ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update && apt upgrade -y && apt install -y \
-    ssh wget unzip vim curl python3
+    ssh wget unzip git vim curl python3
 
 COPY containerfiles/entrypoint.sh /entrypoint.sh
 COPY containerfiles/bashrc.sh /bashrc.sh
