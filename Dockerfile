@@ -3,7 +3,8 @@ FROM kalilinux/kali-rolling:latest
 LABEL org.opencontainers.image.author="benjitrapp.github.io"
 
 ENV DEBIAN_FRONTEND noninteractive
-
+ARG NGROK_TOKEN
+ARG PASSWORD=rootuser
 ENV GOROOT=/usr/lib/go
 ENV GO111MODULE=on
 ENV GOPATH=$HOME/go
