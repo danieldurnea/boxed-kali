@@ -1,35 +1,22 @@
-FROM kalilinux/kali-rolling:latest
-
-LABEL org.opencontainers.image.author="benjitrapp.github.io"
-
-ENV DEBIAN_FRONTEND noninteractive
+FROM ubuntu:22.04
+RUN apt-get -y update && apt-get -y upgrade -y && apt-get install -y sudo
+RUN sudo apt-get install -y curl ffmpeg git locales nano python3-pip screen ssh unzip wget  
+RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
+RUN curl -sL https://deb.nodesource.com/setup_21.x | bash -
+RUN sudo apt-get install -y nodejs
+ENV LANG en_US.utf8
 ARG NGROK_TOKEN
-ARG PASSWORD=rootuser
-ENV GOROOT=/usr/lib/go
-ENV GO111MODULE=on
-ENV GOPATH=$HOME/go
-ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt update && apt upgrade -y && apt install -y \
-    ssh wget unzip git vim curl python3
-
-COPY containerfiles/entrypoint.sh /entrypoint.sh
-COPY containerfiles/bashrc.sh /bashrc.sh
-RUN chmod +x /entrypoint.sh
-
-RUN git clone https://github.com/duo-labs/cloudmapper.git /opt/cloudmapper
-RUN apt update && apt upgrade -y && apt install -y \
-    ssh wget unzip vim curl python3
-RUN wget -q https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip -O /ngrok-stable-linux-amd64.zip\
-    && cd / && unzip ngrok-stable-linux-amd64.zip \
-    && chmod +x ngrok
-RUN mkdir /run/sshd \
-    && echo "/ngrok tcp --authtoken ${NGROK_TOKEN} --region ${REGION} 22 &" >>/openssh.sh \
-    && echo "sleep 5" >> /openssh.sh \
-    && echo "curl -s http://localhost:4040/api/tunnels | python3 -c \"import sys, json; print(\\\"ssh info:\\\n\\\",\\\"ssh\\\",\\\"root@\\\"+json.load(sys.stdin)['tunnels'][0]['public_url'][6:].replace(':', ' -p '),\\\"\\\nROOT Password:craxid\\\")\" || echo \"\nError：NGROK_TOKEN，Ngrok Token\n\"" >> /openssh.sh \
-    && echo '/usr/sbin/sshd -D' >>/openssh.sh \
-    && echo 'PermitRootLogin yes' >>  /etc/ssh/sshd_config  \
-    && echo root:craxid|chpasswd \
-    && chmod 755 /openssh.sh
-EXPOSE 80 443 3306 4040 5432 5700 5701 5010 6800 6900 8080 8888 9000
-ENTRYPOINT [ "/entrypoint.sh" ]
+ENV NGROK_TOKEN=${NGROK_TOKEN}
+RUN wget -O ngrok.zip https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.zip
+RUN unzip ngrok.zip
+RUN echo "./ngrok config add-authtoken ${NGROK_TOKEN} &&" >>/start
+RUN echo "./ngrok tcp --region ap 22 &>/dev/null &" >>/start
+RUN mkdir /run/sshd
+RUN echo '/usr/sbin/sshd -D' >>/start
+RUN echo 'PermitRootLogin yes' >>  /etc/ssh/sshd_config 
+RUN echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
+RUN echo root:kaal|chpasswd
+RUN service ssh start
+RUN chmod 755 /start
+EXPOSE 80 8888 8080 443 5130 5131 5132 5133 5134 5135 3306
+CMD  /start
